@@ -122,7 +122,7 @@ export const useQuestion = (questionId: string) => {
 
   const handleCreateAnswer = useCallback(async (answerData: {
     content: string
-    userTagged?: string[]
+    tags?: string[]
   }) => {
     try {
       const result = await createAnswer({

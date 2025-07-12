@@ -3,10 +3,9 @@ import Answer from '../db/models/Answer.js';
 import Notification from '../db/models/Notification.js';
 import { sendNotification } from '../../index.js';
 
-// Post a new answer to a question
 export const postAnswer = async (req, res) => {
   try {
-    const { questionId, content, userTagged = [] } = req.body;
+    const { questionId, content, tags = [] } = req.body;
     const user = req.user._id;
     const username = req.user.username;
     if (!questionId || !content || !user) {
@@ -35,7 +34,7 @@ export const postAnswer = async (req, res) => {
     }
 
     // Notify tagged users
-    for (const tagged of userTagged) {
+    for (const tagged of tags) {
       const notification = await Notification.create({
         recipient: tagged,
         type: 'answer',
@@ -52,10 +51,9 @@ export const postAnswer = async (req, res) => {
   }
 };
 
-// Reply to an answer
 export const replyToAnswer = async (req, res) => {
   try {
-    const { answerId, content, userTagged = [] } = req.body;
+    const { answerId, content, tags = [] } = req.body;
     const user = req.user._id;
     const username = req.user.username;
     if (!answerId || !content || !user) {
@@ -82,7 +80,7 @@ export const replyToAnswer = async (req, res) => {
     }
 
     // Notify tagged users in reply
-    for (const tagged of userTagged) {
+    for (const tagged of tags) {
       const notification = await Notification.create({
         recipient: tagged,
         type: 'reply',

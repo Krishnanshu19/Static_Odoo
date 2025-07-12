@@ -37,9 +37,12 @@ const QuestionDetailsModal: React.FC<QuestionDetailsModalProps> = ({
       toast.error("Answer cannot be empty.");
       return;
     }
+    // Extract tagged usernames (e.g., @username)
+    const tagMatches = answerContent.match(/@([a-zA-Z0-9_]+)/g) || [];
+    const tags = tagMatches.map((tag) => tag.slice(1)); // Remove '@'
     setSubmitting(true);
     try {
-      await createAnswer({ content: answerContent });
+      await createAnswer({ content: answerContent, tags });
       setAnswerContent("");
       toast.success("Answer posted successfully!");
     } catch (err) {
