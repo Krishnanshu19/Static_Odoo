@@ -1,27 +1,29 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import Header from '@/components/Header';
-import RichTextEditor from '@/components/RichTextEditor';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuestions } from "@/hooks/useStackitApi";
+import Header from "@/components/Header";
+import RichTextEditor from "@/components/RichTextEditor";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AskQuestion() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const { createQuestion, createState } = useQuestions();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [tagInput, setTagInput] = useState("");
 
   if (!isAuthenticated) {
-    router.push('/');
+    router.push("/");
     return null;
   }
 
@@ -29,16 +31,16 @@ export default function AskQuestion() {
     const trimmedTag = tag.trim().toLowerCase();
     if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 5) {
       setTags([...tags, trimmedTag]);
-      setTagInput('');
+      setTagInput("");
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ',') {
+    if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       addTag(tagInput);
     }
@@ -50,34 +52,36 @@ export default function AskQuestion() {
       return;
     }
 
-    setLoading(true);
     try {
-      // Mock API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Question submitted:', { title, description, tags });
-      router.push('/');
-    } catch (error) {
-      console.error('Failed to submit question:', error);
-    } finally {
-      setLoading(false);
+      await createQuestion({
+        title: title.trim(),
+        description: description.trim(),
+        tags,
+      });
+      toast.success("Question submitted successfully!");
+      router.push("/");
+    } catch (error: any) {
+      console.error("Failed to submit question:", error);
+      toast.error(error.data?.message || "Failed to submit question");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-900">
       <Header />
-      
+
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
           <h1 className="text-2xl font-bold text-white mb-6">Ask a Question</h1>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Label htmlFor="title" className="text-white">
                 Title <span className="text-red-400">*</span>
               </Label>
               <p className="text-sm text-gray-400 mb-2">
-                Be specific and imagine you're asking a question to another person
+                Be specific and imagine you&apos;re asking a question to another
+                person
               </p>
               <Input
                 id="title"
@@ -94,7 +98,8 @@ export default function AskQuestion() {
                 Description <span className="text-red-400">*</span>
               </Label>
               <p className="text-sm text-gray-400 mb-2">
-                Include all the information someone would need to answer your question
+                Include all the information someone would need to answer your
+                question
               </p>
               <RichTextEditor
                 content={description}
@@ -110,7 +115,7 @@ export default function AskQuestion() {
               <p className="text-sm text-gray-400 mb-2">
                 Add up to 5 tags to describe what your question is about
               </p>
-              
+
               <div className="space-y-3">
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
@@ -132,7 +137,7 @@ export default function AskQuestion() {
                     ))}
                   </div>
                 )}
-                
+
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
@@ -142,20 +147,22 @@ export default function AskQuestion() {
                   className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                   disabled={tags.length >= 5}
                 />
-                
+
                 <div className="text-sm text-gray-400">
-                  Popular tags: 
-                  {['javascript', 'react', 'python', 'sql', 'nodejs'].map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => addTag(tag)}
-                      className="ml-2 text-blue-400 hover:text-blue-300"
-                      disabled={tags.includes(tag) || tags.length >= 5}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+                  Popular tags:
+                  {["javascript", "react", "python", "sql", "nodejs"].map(
+                    (tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => addTag(tag)}
+                        className="ml-2 text-blue-400 hover:text-blue-300"
+                        disabled={tags.includes(tag) || tags.length >= 5}
+                      >
+                        {tag}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -163,12 +170,17 @@ export default function AskQuestion() {
             <div className="flex items-center space-x-4 pt-4">
               <Button
                 type="submit"
-                disabled={loading || !title.trim() || !description.trim() || tags.length === 0}
+                disabled={
+                  createState.isLoading ||
+                  !title.trim() ||
+                  !description.trim() ||
+                  tags.length === 0
+                }
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {loading ? 'Submitting...' : 'Submit Question'}
+                {createState.isLoading ? "Submitting..." : "Submit Question"}
               </Button>
-              
+
               <Button
                 type="button"
                 variant="outline"

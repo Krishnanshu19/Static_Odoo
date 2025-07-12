@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: 'guest' | 'user' | 'admin';
-  avatar?: string;
-}
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth as useAuthApi } from "@/hooks/useStackitApi";
+import type { User } from "@/types/apis";
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (
+    username: string,
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,51 +23,76 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
+  const {
+    login: loginApi,
+    register: registerApi,
+    logout: logoutApi,
+    loginState,
+    registerState,
+  } = useAuthApi();
 
   useEffect(() => {
     // Check for existing session
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const savedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+    if (savedUser && token) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error("Error parsing saved user:", error);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+      }
     }
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Mock login - replace with actual API call
-    const mockUser: User = {
-      id: '1',
-      username: 'johndoe',
-      email,
-      role: 'user',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    };
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+    try {
+      const result = await loginApi({ email, password });
+      if (result.success && result.data.user) {
+        setUser(result.data.user);
+        localStorage.setItem("user", JSON.stringify(result.data.user));
+        localStorage.setItem("token", result.data.token);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
 
-  const register = async (username: string, email: string, password: string) => {
-    // Mock registration - replace with actual API call
-    const mockUser: User = {
-      id: Date.now().toString(),
-      username,
-      email,
-      role: 'user',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    };
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+  const register = async (
+    username: string,
+    email: string,
+    password: string,
+    name: string
+  ) => {
+    try {
+      const result = await registerApi({ username, email, password, name });
+      if (result.success && result.data.user) {
+        setUser(result.data.user);
+        localStorage.setItem("user", JSON.stringify(result.data.user));
+        localStorage.setItem("token", result.data.token);
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    logoutApi();
   };
 
   return (
@@ -78,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         isAuthenticated: !!user,
+        isLoading: loginState.isLoading || registerState.isLoading,
       }}
     >
       {children}

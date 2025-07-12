@@ -1,13 +1,18 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 interface AuthModalProps {
   open: boolean;
@@ -16,12 +21,13 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
   const { login, register } = useAuth();
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [registerData, setRegisterData] = useState({ 
-    username: '', 
-    email: '', 
-    password: '', 
-    confirmPassword: '' 
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [registerData, setRegisterData] = useState({
+    username: "",
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +38,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
       await login(loginData.email, loginData.password);
       onClose();
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
     } finally {
       setLoading(false);
     }
@@ -40,26 +46,31 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Client-side password validation
     if (registerData.password !== registerData.confirmPassword) {
-      toast.error('Passwords do not match!');
+      toast.error("Passwords do not match!");
       return;
     }
-    
+
     if (registerData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long!');
+      toast.error("Password must be at least 6 characters long!");
       return;
     }
-    
+
     setLoading(true);
     try {
-      await register(registerData.username, registerData.email, registerData.password);
-      toast.success('Account created successfully!');
+      await register(
+        registerData.username,
+        registerData.email,
+        registerData.password,
+        registerData.name
+      );
+      toast.success("Account created successfully!");
       onClose();
     } catch (error) {
-      console.error('Registration failed:', error);
-      toast.error('Registration failed. Please try again.');
+      console.error("Registration failed:", error);
+      toast.error("Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -86,7 +97,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
                   id="login-email"
                   type="email"
                   value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, email: e.target.value })
+                  }
                   className="bg-gray-700 border-gray-600 text-white"
                   required
                 />
@@ -97,13 +110,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
                   id="login-password"
                   type="password"
                   value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, password: e.target.value })
+                  }
                   className="bg-gray-700 border-gray-600 text-white"
                   required
                 />
               </div>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={loading}
+              >
+                {loading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </TabsContent>
@@ -116,7 +135,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
                   id="register-username"
                   type="text"
                   value={registerData.username}
-                  onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      username: e.target.value,
+                    })
+                  }
+                  className="bg-gray-700 border-gray-600 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="register-name">Full Name</Label>
+                <Input
+                  id="register-name"
+                  type="text"
+                  value={registerData.name}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      name: e.target.value,
+                    })
+                  }
                   className="bg-gray-700 border-gray-600 text-white"
                   required
                 />
@@ -127,7 +167,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
                   id="register-email"
                   type="email"
                   value={registerData.email}
-                  onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, email: e.target.value })
+                  }
                   className="bg-gray-700 border-gray-600 text-white"
                   required
                 />
@@ -138,24 +180,40 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
                   id="register-password"
                   type="password"
                   value={registerData.password}
-                  onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      password: e.target.value,
+                    })
+                  }
                   className="bg-gray-700 border-gray-600 text-white"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="register-confirm-password">Confirm Password</Label>
+                <Label htmlFor="register-confirm-password">
+                  Confirm Password
+                </Label>
                 <Input
                   id="register-confirm-password"
                   type="password"
                   value={registerData.confirmPassword}
-                  onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
                   className="bg-gray-700 border-gray-600 text-white"
                   required
                 />
               </div>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
-                {loading ? 'Creating account...' : 'Create Account'}
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={loading}
+              >
+                {loading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
           </TabsContent>

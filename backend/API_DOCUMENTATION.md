@@ -79,6 +79,33 @@
 }
 ```
 
+### Get Questions
+- **GET** `/questions?filter=popular|unanswered|newest`
+- **No auth required**
+- **Query Params:**
+  - `filter` (optional):
+    - `popular`: Most upvoted questions
+    - `unanswered`: Questions with no answers
+    - `newest` (default): Latest questions
+#### Response
+```json
+{
+  "questions": [
+    {
+      "_id": "...",
+      "title": "...",
+      "description": "...",
+      "tags": ["..."],
+      "user": "...",
+      "createdAt": "...",
+      "updatedAt": "..."
+      // For popular: may include upvoteCount
+    }
+    // ...
+  ]
+}
+```
+
 ---
 
 ## Answers
@@ -151,6 +178,31 @@
 ---
 
 ## Notifications
+
+### Get Notifications
+- **GET** `/notifications`
+- **Auth required**
+- Returns all notifications for the logged-in user, sorted by newest first.
+#### Response
+```json
+{
+  "notifications": [
+    {
+      "_id": "...",
+      "recipient": "username",
+      "type": "answer" | "reply",
+      "question": "...",
+      "answer": "...", // optional
+      "fromUser": "otheruser",
+      "message": "...",
+      "isRead": false,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+    // ...
+  ]
+}
+```
 
 ### Notification Model
 - `recipient`: username
