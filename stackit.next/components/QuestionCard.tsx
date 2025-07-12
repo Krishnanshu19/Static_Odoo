@@ -1,22 +1,14 @@
 "use client";
-
 import React, { useState } from "react";
-import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import {
-  MessageSquare,
-  ThumbsUp,
-  ThumbsDown,
-  Eye,
-  User,
-  ChevronDown,
-} from "lucide-react";
+import { MessageSquare, ThumbsUp, ThumbsDown, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Question } from "@/types/apis";
 import { useQuestion } from "@/hooks/useStackitApi";
 import QuestionDetailsModal from "@/components/QuestionDetailsModal";
+import { toast } from "sonner";
 
 interface QuestionCardProps {
   question: Question;
@@ -32,15 +24,20 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question }) => {
   const handleVote = async (type: "up" | "down", e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setLocalVotes((prev) => prev + (type === "up" ? 1 : -1));
     try {
-      await vote({
+      const result = await vote({
         targetType: "question",
         targetId: question._id,
         voteType: type,
       });
+      if (result && result.message === "Already voted") {
+        toast.error("You have already voted.");
+        // Do not update the count
+      } else {
+        setLocalVotes((prev) => prev + (type === "up" ? 1 : -1));
+      }
     } catch (error) {
-      setLocalVotes((prev) => prev - (type === "up" ? 1 : -1));
+      toast.error("Voting failed.");
       console.error("Error voting:", error);
     }
   };
@@ -57,9 +54,21 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question }) => {
               {question.title}
             </h3>
             <div className="flex items-center space-x-4 ml-4 text-sm text-gray-400">
-              <span className="bg-gray-700 px-2 py-1 rounded text-xs font-medium">
-                {question.totalReplies} ans
-              </span>
+              {typeof question.answerCount === "number" &&
+              typeof question.totalReplies === "number" ? (
+                <span className="bg-gray-700 px-2 py-1 rounded text-xs font-medium">
+                  {question.answerCount} answers • {question.totalReplies}{" "}
+                  replies
+                </span>
+              ) : typeof question.answerCount === "number" ? (
+                <span className="bg-gray-700 px-2 py-1 rounded text-xs font-medium">
+                  {question.answerCount} answers
+                </span>
+              ) : (
+                <span className="bg-gray-700 px-2 py-1 rounded text-xs font-medium">
+                  {question.totalReplies} replies
+                </span>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -104,7 +113,11 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question }) => {
                   </div>
                   <div className="flex items-center space-x-1">
                     <MessageSquare className="w-4 h-4" />
-                    <span>{question.totalReplies}</span>
+                    <span>
+                      {typeof question.answerCount === "number"
+                        ? question.answerCount
+                        : question.totalReplies}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-400">

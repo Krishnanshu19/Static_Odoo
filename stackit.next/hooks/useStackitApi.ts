@@ -5,7 +5,6 @@ import {
   useGetQuestionsQuery,
   useGetQuestionQuery,
   useCreateQuestionMutation,
-  useGetAnswersQuery,
   useCreateAnswerMutation,
   useReplyToAnswerMutation,
   useVoteMutation,
@@ -101,8 +100,7 @@ export const useQuestions = (filter?: string) => {
 
 // Custom hook for a single question
 export const useQuestion = (questionId: string) => {
-  const { data: question, isLoading, error } = useGetQuestionQuery(questionId)
-  const { data: answers, isLoading: answersLoading } = useGetAnswersQuery(questionId)
+  const { data: questionDetails, isLoading, error } = useGetQuestionQuery(questionId)
   const [createAnswer, createAnswerState] = useCreateAnswerMutation()
   const [vote, voteState] = useVoteMutation()
 
@@ -135,9 +133,9 @@ export const useQuestion = (questionId: string) => {
   }, [vote])
 
   return {
-    question,
-    answers,
-    isLoading: isLoading || answersLoading,
+    question: questionDetails?.question,
+    answers: questionDetails?.answers || [],
+    isLoading,
     error,
     createAnswer: handleCreateAnswer,
     vote: handleVote,

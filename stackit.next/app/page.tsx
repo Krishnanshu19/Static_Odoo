@@ -28,10 +28,11 @@ export default function Home() {
     switch (activeFilter) {
       case "popular":
         return [...questions].sort(
-          (a, b) => (b.upvotes || 0) - (a.upvotes || 0)
+          (a, b) => (b.upvoteCount || 0) - (a.upvoteCount || 0)
         );
       case "unanswered":
-        return questions.filter((q) => !q.answers || q.answers.length === 0);
+        // If answers are not present, use totalReplies
+        return questions.filter((q) => !q.totalReplies || q.totalReplies === 0);
       case "newest":
       default:
         return [...questions].sort(
@@ -127,7 +128,7 @@ export default function Home() {
                 </Button>
 
                 {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-                  let pageNum;
+                  let pageNum: number;
                   if (totalPages <= 7) {
                     pageNum = i + 1;
                   } else if (currentPage <= 4) {

@@ -1,6 +1,7 @@
 import Question from '../db/models/Question.js';
 import Answer from '../db/models/Answer.js';
 import Vote from '../db/models/Vote.js';
+import User from '../db/models/User.js'; // Added import for User
 
 export const submitQuestion = async (req, res) => {
   try {
@@ -103,7 +104,8 @@ export const getQuestions = async (req, res) => {
         targetType: 'question',
         targetId: { $in: questions.map(q => q._id) },
         user: req.user._id
-      });
+      }).lean();
+      console.log('userVotes:', userVotes, 'req.user._id:', String(req.user._id));
     }
     if (!isAggregate) {
       const questionIds = questions.map(q => q._id);
@@ -113,8 +115,10 @@ export const getQuestions = async (req, res) => {
       ]);
       const answers = await Answer.find({ question: { $in: questionIds } });
       const repliesByQuestion = {};
+      const answerCountByQuestion = {};
       for (const ans of answers) {
         repliesByQuestion[ans.question] = (repliesByQuestion[ans.question] || 0) + (ans.replies ? ans.replies.length : 0);
+        answerCountByQuestion[ans.question] = (answerCountByQuestion[ans.question] || 0) + 1;
       }
       questions = questions.map(q => {
         const upvote = votes.find(v => String(v._id.targetId) === String(q._id) && v._id.voteType === 'up');
@@ -133,6 +137,7 @@ export const getQuestions = async (req, res) => {
           downvoteCount: downvote ? downvote.count : 0,
           username: q.user && q.user.username ? q.user.username : undefined,
           totalReplies: repliesByQuestion[q._id] || 0,
+          answerCount: answerCountByQuestion[q._id] || 0,
           isVoted
         };
       });
@@ -141,5 +146,37 @@ export const getQuestions = async (req, res) => {
     res.status(200).json({ questions });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch questions', error: error.message });
+  }
+};
+
+export const getQuestionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const question = await Question.findById(id).populate('user', 'username');
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    // Fetch answers for this question, populate user and replies.user
+    const answers = await Answer.find({ question: id })
+      .populate('user', 'username')
+      .lean();
+    // For each answer, populate user info for each reply
+    for (const answer of answers) {
+      if (answer.replies && answer.replies.length > 0) {
+        for (const reply of answer.replies) {
+          if (reply.user) {
+            const replyUser = await User.findById(reply.user).select('username');
+            reply.user = replyUser ? { _id: replyUser._id, username: replyUser.username } : reply.user;
+          }
+        }
+      }
+    }
+    res.status(200).json({
+      question,
+      answers,
+      answerCount: answers.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch question details', error: error.message });
   }
 }; 

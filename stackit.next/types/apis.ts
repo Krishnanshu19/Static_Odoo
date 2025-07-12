@@ -22,6 +22,7 @@ export interface Question {
   totalReplies: number;
   createdAt: string;
   updatedAt: string;
+  answerCount?: number;
 }
 
 // Answer Types
@@ -94,6 +95,12 @@ export interface CreateQuestionRequest {
 export interface QuestionResponse {
   message: string;
   question: Question;
+}
+
+// Question Details Response (includes answers)
+export interface QuestionDetailsResponse {
+  question: Question;
+  answers: Answer[];
 }
 
 // Answer Types

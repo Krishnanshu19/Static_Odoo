@@ -10,6 +10,7 @@ import type {
   AuthResponse,
   CreateQuestionRequest,
   QuestionResponse,
+  QuestionDetailsResponse,
   CreateAnswerRequest,
   ReplyRequest,
   AnswerResponse,
@@ -22,7 +23,7 @@ import type {
 export const stackitApi = createApi({
   reducerPath: 'stackitApi',
   baseQuery: fetchBaseQuery({ 
-    baseUrl: 'http://localhost:5001/api/v1',
+    baseUrl:  process.env.NEXT_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState }) => {
       // Get token from localStorage or state
       const token = localStorage.getItem('token')
@@ -72,9 +73,12 @@ export const stackitApi = createApi({
           : [{ type: 'Question', id: 'LIST' }],
     }),
 
-    getQuestion: build.query<Question, string>({
+    getQuestion: build.query<QuestionDetailsResponse, string>({
       query: (id) => `/questions/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Question', id }],
+      providesTags: (result, error, id) => [
+        { type: 'Question', id },
+        ...(result?.answers?.map(answer => ({ type: 'Answer' as const, id: answer._id })) || [])
+      ],
     }),
 
     createQuestion: build.mutation<QuestionResponse, CreateQuestionRequest>({
@@ -87,17 +91,6 @@ export const stackitApi = createApi({
     }),
 
     // Answers endpoints
-    getAnswers: build.query<Answer[], string>({
-      query: (questionId) => `/questions/${questionId}/answers`,
-      providesTags: (result, error, questionId) =>
-        result
-          ? [
-              ...result.map(({ _id }) => ({ type: 'Answer' as const, id: _id })),
-              { type: 'Answer', id: `question-${questionId}` },
-            ]
-          : [{ type: 'Answer', id: `question-${questionId}` }],
-    }),
-
     createAnswer: build.mutation<AnswerResponse, CreateAnswerRequest>({
       query: (answer) => ({
         url: '/answers',
@@ -105,7 +98,6 @@ export const stackitApi = createApi({
         body: answer,
       }),
       invalidatesTags: (result, error, { questionId }) => [
-        { type: 'Answer', id: `question-${questionId}` },
         { type: 'Question', id: questionId },
         { type: 'Notification', id: 'LIST' },
       ],
@@ -191,7 +183,6 @@ export const {
   useCreateQuestionMutation,
   
   // Answer hooks
-  useGetAnswersQuery,
   useCreateAnswerMutation,
   useReplyToAnswerMutation,
   
