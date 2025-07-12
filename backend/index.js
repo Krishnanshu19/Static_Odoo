@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { connectDB, getConnectionStatus } from './src/db/connect.js';
 import authRoutes from './src/routes/auth.js';
 import questionRoutes from './src/routes/question.js';
+import answerRoutes from './src/routes/answer.js';
 
 dotenv.config();
 
@@ -16,11 +17,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/questions', questionRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/questions', questionRoutes);
+app.use('/api/v1/answers', answerRoutes);
 
 // Health check route
-app.get('/api/health', (req, res) => {
+app.get('/api/v1/health', (req, res) => {
   const dbStatus = getConnectionStatus();
   res.json({ 
     message: 'Server is running', 
