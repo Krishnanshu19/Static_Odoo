@@ -6,6 +6,7 @@ import authRoutes from './src/routes/auth.js';
 import questionRoutes from './src/routes/question.js';
 import answerRoutes from './src/routes/answer.js';
 import voteRoutes from './src/routes/vote.js';
+import notificationRoutes from './src/routes/notification.js';
 import http from 'http';
 import { setupSocketServer, sendNotification } from './src/socket/socketServer.js';
 
@@ -24,6 +25,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/answers', answerRoutes);
 app.use('/api/v1/votes', voteRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // Health check route
 app.get('/api/v1/health', (req, res) => {

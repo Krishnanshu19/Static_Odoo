@@ -48,46 +48,27 @@ const register = async (req, res) => {
 // Login User
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // Find user by email
-    const user = await User.findOne({ email });
+    const { email, username, password } = req.body;
+    console.log("Login request received:", { email, username });
+    let user;
+    if (email) {
+      user = await User.findOne({ email });
+    } else if (username) {
+      user = await User.findOne({ username });
+    }
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
-      });
+      return res.status(400).json(errorResponse('Invalid credentials', null, 400));
     }
-
-    // Check if user is active
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is deactivated'
-      });
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json(errorResponse('Invalid credentials', null, 400));
     }
-
-    // Verify password
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
-      });
-    }
-
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-
     // Generate token
     const token = generateAccessToken(user._id, user.email);
-
-    res.json(successResponse('Login successful', {
+    res.status(200).json(successResponse('Login successful', {
       user: user.toJSON(),
       token
-    }));
-
+    }, 200));
   } catch (error) {
     logError(error, 'Login error');
     res.status(500).json(errorResponse('Internal server error', error.message));

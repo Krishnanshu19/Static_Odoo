@@ -30,11 +30,17 @@ const registerValidation = [
 
 // Validation rules for login
 const loginValidation = [
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email address'),
-  
+  body(['email', 'username'])
+    .custom((value, { req }) => {
+      const email = req.body.email;
+      const username = req.body.username;
+      const isEmail = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      const isUsername = username && /^[a-zA-Z0-9_]{3,30}$/.test(username);
+      if (!isEmail && !isUsername) {
+        throw new Error('Please provide a valid email or username');
+      }
+      return true;
+    }),
   body('password')
     .notEmpty()
     .withMessage('Password is required')

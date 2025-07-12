@@ -1,180 +1,208 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Header } from '@/components/layout/Header';
-import { QuestionList } from '@/components/questions/QuestionList';
-import { AuthModal } from '@/components/auth/AuthModal';
-import { AskQuestionModal } from '@/components/questions/AskQuestionModal';
-import { useAuth } from '@/hooks/useAuth';
-import { Question } from '@/types';
-import { mockQuestions } from '@/lib/mockData';
+import React, { useState } from "react";
+import Header from "@/components/Header";
+import QuestionCard from "@/components/QuestionCard";
+import FilterTabs from "@/components/FilterTabs";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useQuestions } from "@/hooks/useStackitApi";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
-  const { user, login, logout, register } = useAuth();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [askModalOpen, setAskModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'unanswered'>('recent');
+  const [activeFilter, setActiveFilter] = useState("newest");
+  const [currentPage, setCurrentPage] = useState(1);
+  const { questions, isLoading, error } = useQuestions(activeFilter);
 
-  useEffect(() => {
-    setQuestions(mockQuestions);
-  }, []);
+  console.log("questions", questions);
+  console.log("isLoading", isLoading);
+  console.log("error", error);
 
-  const handleAskQuestion = (questionData: Omit<Question, 'id' | 'authorId' | 'author' | 'createdAt' | 'votes' | 'answers'>) => {
-    if (!user) return;
+  const questionsPerPage = 10;
+  const totalPages = Math.ceil((questions?.length || 0) / questionsPerPage);
 
-    const newQuestion: Question = {
-      id: Date.now().toString(),
-      authorId: user.id,
-      author: user,
-      createdAt: new Date(),
-      votes: 0,
-      answers: [],
-      ...questionData,
-    };
+  // Filter questions based on active filter
+  const getFilteredQuestions = () => {
+    if (!questions) return [];
 
-    setQuestions(prev => [newQuestion, ...prev]);
-    setAskModalOpen(false);
+    switch (activeFilter) {
+      case "popular":
+        return [...questions].sort(
+          (a, b) => (b.upvoteCount || 0) - (a.upvoteCount || 0)
+        );
+      case "unanswered":
+        // If answers are not present, use totalReplies
+        return questions.filter((q) => !q.totalReplies || q.totalReplies === 0);
+      case "newest":
+      default:
+        return [...questions].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+    }
   };
 
-  const sortedQuestions = [...questions].sort((a, b) => {
-    switch (sortBy) {
-      case 'popular':
-        return b.votes - a.votes;
-      case 'unanswered':
-        return a.answers.length - b.answers.length;
-      default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
-  });
+  const filteredQuestions = getFilteredQuestions();
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center text-red-400">
+            <h2 className="text-xl font-semibold mb-2">
+              Error loading questions
+            </h2>
+            <p>Please try again later.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header
-        user={user}
-        onLogin={() => {
-          setAuthMode('login');
-          setAuthModalOpen(true);
-        }}
-        onRegister={() => {
-          setAuthMode('register');
-          setAuthModalOpen(true);
-        }}
-        onLogout={logout}
-        onAskQuestion={() => setAskModalOpen(true)}
-      />
+    <div className="min-h-screen bg-gray-900">
+      <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content */}
+          {/* Main content */}
           <div className="flex-1">
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-              <div className="p-6 border-b border-slate-200">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <h1 className="text-2xl font-bold text-slate-900">All Questions</h1>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSortBy('recent')}
-                      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        sortBy === 'recent'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                      }`}
-                    >
-                      Recent
-                    </button>
-                    <button
-                      onClick={() => setSortBy('popular')}
-                      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        sortBy === 'popular'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                      }`}
-                    >
-                      Popular
-                    </button>
-                    <button
-                      onClick={() => setSortBy('unanswered')}
-                      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        sortBy === 'unanswered'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                      }`}
-                    >
-                      Unanswered
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <QuestionList questions={sortedQuestions} currentUser={user} />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+              <h1 className="text-2xl font-bold text-white">Questions</h1>
+              <FilterTabs
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+                className="hidden md:flex"
+              />
             </div>
-          </div>
 
-          {/* Sidebar */}
-          <div className="lg:w-80">
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <h2 className="font-semibold text-slate-900 mb-4">Welcome to StackIt</h2>
-              <p className="text-sm text-slate-600 mb-4">
-                A minimal Q&A platform for collaborative learning and knowledge sharing.
-              </p>
-              {!user && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      setAuthMode('register');
-                      setAuthModalOpen(true);
-                    }}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
+            <div className="space-y-4">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-800 rounded-lg p-6 border border-gray-700"
                   >
-                    Join the Community
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAuthMode('login');
-                      setAuthModalOpen(true);
-                    }}
-                    className="w-full border border-slate-300 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-50 transition-colors font-medium"
-                  >
-                    Sign In
-                  </button>
+                    <div className="flex items-start space-x-4">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                        <div className="flex space-x-2">
+                          <Skeleton className="h-6 w-16" />
+                          <Skeleton className="h-6 w-16" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : filteredQuestions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-gray-400">
+                  <h3 className="text-lg font-semibold mb-2">
+                    No questions found
+                  </h3>
+                  <p>Be the first to ask a question!</p>
                 </div>
+              ) : (
+                filteredQuestions.map((question) => (
+                  <QuestionCard key={question._id} question={question} />
+                ))
               )}
             </div>
 
-            <div className="mt-6 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">Popular Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {['React', 'JavaScript', 'TypeScript', 'Next.js', 'Node.js', 'CSS', 'HTML', 'Python'].map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm hover:bg-slate-200 cursor-pointer transition-colors"
-                  >
-                    {tag}
-                  </span>
-                ))}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`min-w-[2.5rem] ${
+                        currentPage === pageNum
+                          ? "bg-blue-600 text-white"
+                          : "border-gray-600 text-gray-300 hover:bg-gray-700"
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
-            </div>
+            )}
           </div>
+
+          {/* Sidebar */}
+          <aside className="w-full lg:w-80">
+            {/* Popular Tags section - only show on md and up */}
+            <div className="hidden md:block">
+              <section className="mt-8 bg-gray-800 rounded-lg p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">
+                  Popular Tags
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "javascript",
+                    "react",
+                    "python",
+                    "sql",
+                    "nodejs",
+                    "css",
+                    "html",
+                    "typescript",
+                  ].map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm font-medium"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </aside>
         </div>
       </main>
-
-      {/* Modals */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        mode={authMode}
-        onLogin={login}
-        onRegister={register}
-        onSwitchMode={(mode) => setAuthMode(mode)}
-      />
-
-      <AskQuestionModal
-        isOpen={askModalOpen}
-        onClose={() => setAskModalOpen(false)}
-        onSubmit={handleAskQuestion}
-        user={user}
-      />
     </div>
   );
 }
