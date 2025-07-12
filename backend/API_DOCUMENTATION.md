@@ -96,10 +96,14 @@
       "title": "...",
       "description": "...",
       "tags": ["..."],
-      "user": "...",
+      "user": "...", // userId
+      "username": "...", // username of the question owner
+      "upvoteCount": 5,
+      "downvoteCount": 1,
+      "totalReplies": 3,
       "createdAt": "...",
       "updatedAt": "..."
-      // For popular: may include upvoteCount
+      // For popular: may include upvoteCount, downvoteCount, username, totalReplies
     }
     // ...
   ]

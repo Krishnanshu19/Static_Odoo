@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Home() {
   const [activeFilter, setActiveFilter] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
-  const { questions, isLoading, error } = useQuestions();
+  const { questions, isLoading, error } = useQuestions(activeFilter);
 
   console.log("questions", questions);
   console.log("isLoading", isLoading);
@@ -78,7 +78,6 @@ export default function Home() {
 
             <div className="space-y-4">
               {isLoading ? (
-                // Loading skeletons
                 Array.from({ length: 5 }).map((_, index) => (
                   <div
                     key={index}
@@ -98,17 +97,17 @@ export default function Home() {
                     </div>
                   </div>
                 ))
-              ) : filteredQuestions.length > 0 ? (
-                filteredQuestions.map((question) => (
-                  <QuestionCard key={question._id} question={question} />
-                ))
-              ) : (
+              ) : filteredQuestions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-gray-400">
                   <h3 className="text-lg font-semibold mb-2">
                     No questions found
                   </h3>
                   <p>Be the first to ask a question!</p>
                 </div>
+              ) : (
+                filteredQuestions.map((question) => (
+                  <QuestionCard key={question._id} question={question} />
+                ))
               )}
             </div>
 

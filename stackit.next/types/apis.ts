@@ -6,6 +6,7 @@ export interface User {
   name: string;
   createdAt: string;
   updatedAt: string;
+  avatar?: string;
 }
 
 // Question Types
@@ -14,14 +15,13 @@ export interface Question {
   title: string;
   description: string;
   tags: string[];
-  author: User;
+  user: string; // userId
+  username: string;
+  upvoteCount: number;
+  downvoteCount: number;
+  totalReplies: number;
   createdAt: string;
   updatedAt: string;
-  upvotes: number;
-  downvotes: number;
-  answers?: Answer[];
-  views?: number;
-  hasAcceptedAnswer?: boolean;
 }
 
 // Answer Types

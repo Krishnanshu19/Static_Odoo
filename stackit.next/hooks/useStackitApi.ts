@@ -72,9 +72,9 @@ export const useAuth = () => {
 }
 
 // Custom hook for questions
-export const useQuestions = () => {
-  const { data: questions, isLoading, error, refetch } = useGetQuestionsQuery()
-  const [createQuestion, createState] = useCreateQuestionMutation()
+export const useQuestions = (filter?: string) => {
+  const { data: questions, isLoading, error, refetch } = useGetQuestionsQuery(filter ? { filter } : undefined);
+  const [createQuestion, createState] = useCreateQuestionMutation();
 
   const handleCreateQuestion = useCallback(async (questionData: {
     title: string
@@ -82,12 +82,12 @@ export const useQuestions = () => {
     tags: string[]
   }) => {
     try {
-      const result = await createQuestion(questionData).unwrap()
-      return result
+      const result = await createQuestion(questionData).unwrap();
+      return result;
     } catch (error) {
-      throw error
+      throw error;
     }
-  }, [createQuestion])
+  }, [createQuestion]);
 
   return {
     questions,
@@ -96,7 +96,7 @@ export const useQuestions = () => {
     refetch,
     createQuestion: handleCreateQuestion,
     createState,
-  }
+  };
 }
 
 // Custom hook for a single question

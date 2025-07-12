@@ -54,8 +54,15 @@ export const stackitApi = createApi({
     }),
 
     // Questions endpoints
-    getQuestions: build.query<Question[], void>({
-      query: () => '/questions',
+    getQuestions: build.query<Question[], { filter?: string } | void>({
+      query: (arg) => {
+        let url = '/questions';
+        if (arg && arg.filter) {
+          url += `?filter=${arg.filter}`;
+        }
+        return url;
+      },
+      transformResponse: (response: { questions: Question[] }) => response.questions,
       providesTags: (result) =>
         result
           ? [
@@ -132,6 +139,7 @@ export const stackitApi = createApi({
     // Notifications endpoints
     getNotifications: build.query<Notification[], void>({
       query: () => '/notifications',
+      transformResponse: (response: { notifications: Notification[] }) => response.notifications,
       providesTags: (result) =>
         result
           ? [
