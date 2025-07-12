@@ -65,7 +65,7 @@ const connectDB = async () => {
       // Wait 5 seconds before retrying
       setTimeout(() => {
         connectDB();
-      }, 5000);
+      }, 3000);
     } else {
       console.error('Max connection retries reached. Exiting...');
       process.exit(1);
