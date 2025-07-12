@@ -69,7 +69,14 @@ const QuestionDetailsModal: React.FC<QuestionDetailsModalProps> = ({
               dangerouslySetInnerHTML={{ __html: question.description }}
             />
             <div className="mb-4 text-sm text-gray-400">
-              Asked by: {question.username || "Unknown"}
+              Asked by:{" "}
+              {question.username ||
+                (question.user &&
+                typeof question.user === "object" &&
+                "username" in question.user
+                  ? (question.user as any).username
+                  : undefined) ||
+                "Unknown"}
             </div>
             <div className="mb-6">
               <h3 className="font-semibold mb-2">Answers ({answers.length})</h3>
@@ -88,7 +95,7 @@ const QuestionDetailsModal: React.FC<QuestionDetailsModalProps> = ({
                         <div className="font-semibold text-xs mb-1">
                           Replies ({answer.replies.length}):
                         </div>
-                        {answer.replies.map((reply) => (
+                        {answer.replies.map((reply: any) => (
                           <div
                             key={reply._id}
                             className="mb-2 p-2 bg-gray-600 rounded"

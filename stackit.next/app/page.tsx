@@ -173,31 +173,32 @@ export default function Home() {
 
           {/* Sidebar */}
           <aside className="w-full lg:w-80">
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h2 className="text-lg font-semibold text-white mb-4">
-                Popular Tags
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "javascript",
-                  "react",
-                  "python",
-                  "sql",
-                  "nodejs",
-                  "css",
-                  "html",
-                  "typescript",
-                ].map((tag) => (
-                  <Button
-                    key={tag}
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                  >
-                    {tag}
-                  </Button>
-                ))}
-              </div>
+            {/* Popular Tags section - only show on md and up */}
+            <div className="hidden md:block">
+              <section className="mt-8 bg-gray-800 rounded-lg p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">
+                  Popular Tags
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "javascript",
+                    "react",
+                    "python",
+                    "sql",
+                    "nodejs",
+                    "css",
+                    "html",
+                    "typescript",
+                  ].map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm font-medium"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </section>
             </div>
           </aside>
         </div>

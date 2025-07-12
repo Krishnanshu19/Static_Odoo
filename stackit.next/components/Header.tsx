@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { Search, Bell, Menu, User, LogOut } from "lucide-react";
+import { Search, Bell, Menu, User, LogOut, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +19,7 @@ import NotificationDropdown from "./NotificationDropdown";
 import AuthModal from "./AuthModal";
 import { useRouter } from "next/navigation";
 import AskQuestionModal from "./AskQuestionModal";
+import ProfileModal from "./ProfileModal";
 
 const Header: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -27,6 +28,8 @@ const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [askModalOpen, setAskModalOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -53,6 +56,7 @@ const Header: React.FC = () => {
               StackIt
             </Link>
 
+            {/* Desktop search */}
             <form
               onSubmit={handleSearch}
               className="hidden md:flex items-center"
@@ -68,18 +72,25 @@ const Header: React.FC = () => {
                 />
               </div>
             </form>
+            {/* Mobile search icon */}
+            <button
+              type="button"
+              className="md:hidden p-2"
+              onClick={() => setShowMobileSearch(true)}
+            >
+              <Search className="w-5 h-5 text-gray-300" />
+            </button>
           </div>
 
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
                 <Button
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white hidden md:inline-flex"
                   onClick={handleAskQuestion}
                 >
                   Ask Question
                 </Button>
-
                 <NotificationDropdown>
                   <Button variant="ghost" className="relative p-2">
                     <Bell className="w-5 h-5 text-gray-300" />
@@ -90,39 +101,30 @@ const Header: React.FC = () => {
                     )}
                   </Button>
                 </NotificationDropdown>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="hidden sm:flex items-center space-x-2 p-2"
-                    >
-                      {user?.avatar ? (
-                        <img
-                          src={user.avatar}
-                          alt={user.username || "User"}
-                          className="w-8 h-8 rounded-full"
-                        />
-                      ) : (
-                        <User className="w-5 h-5 text-gray-300" />
-                      )}
-                      <span className="hidden lg:block text-gray-300">
-                        {user?.username}
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-gray-800 border-gray-600">
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="ghost"
+                  className="hidden sm:flex items-center space-x-2 p-2"
+                  onClick={() => setProfileModalOpen(true)}
+                >
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username || "User"}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-gray-300" />
+                  )}
+                  <span className="hidden lg:block text-gray-300">
+                    {user?.username}
+                  </span>
+                </Button>
+                <ProfileModal
+                  open={profileModalOpen}
+                  onClose={() => setProfileModalOpen(false)}
+                  user={user}
+                  onLogout={logout}
+                />
               </>
             ) : (
               <Button
@@ -132,7 +134,6 @@ const Header: React.FC = () => {
                 Login
               </Button>
             )}
-
             <Button
               variant="ghost"
               className="md:hidden p-2"
@@ -143,23 +144,41 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-700 py-4 space-y-4">
-            {/* Mobile search */}
-            <form onSubmit={handleSearch} className="flex items-center">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        {/* Mobile search overlay */}
+        {showMobileSearch && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-start justify-center pt-24">
+            <form
+              onSubmit={(e) => {
+                handleSearch(e);
+                setShowMobileSearch(false);
+              }}
+              className="w-full max-w-md mx-auto px-4"
+            >
+              <div className="relative">
                 <Input
                   type="text"
                   placeholder="Search questions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 w-full bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                  autoFocus
                 />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  onClick={() => setShowMobileSearch(false)}
+                >
+                  ✕
+                </button>
               </div>
             </form>
+          </div>
+        )}
 
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-700 py-4 space-y-4">
             {/* Mobile filters */}
             <div className="flex flex-wrap gap-2">
               {["Newest", "Unanswered", "Popular", "Hot", "Week", "Month"].map(
@@ -175,45 +194,47 @@ const Header: React.FC = () => {
                 )
               )}
             </div>
-
-            {/* Mobile Ask Question button */}
+            {/* Mobile user menu */}
             {isAuthenticated && (
-              <>
-                <Link href="/ask" className="block">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    Ask Question
-                  </Button>
-                </Link>
-
-                {/* Mobile user menu */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-700">
-                  <div className="flex items-center space-x-2">
-                    {user?.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={user.username || "User"}
-                        className="w-8 h-8 rounded-full"
-                      />
-                    ) : (
-                      <User className="w-5 h-5 text-gray-300" />
-                    )}
-                    <span className="text-gray-300">{user?.username}</span>
-                  </div>
-                  <Button
-                    onClick={logout}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-300 hover:text-white hover:bg-gray-700"
-                  >
-                    <LogOut className="w-4 h-4 mr-1" />
-                    Logout
-                  </Button>
+              <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                <div className="flex items-center space-x-2">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username || "User"}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-gray-300" />
+                  )}
+                  <span className="text-gray-300">{user?.username}</span>
                 </div>
-              </>
+                <Button
+                  onClick={logout}
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-300 hover:text-white hover:bg-gray-700"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  Logout
+                </Button>
+              </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Floating plus button for mobile Ask Question */}
+      {isAuthenticated && (
+        <button
+          type="button"
+          className="fixed bottom-6 right-6 z-50 md:hidden bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg p-4 flex items-center justify-center"
+          onClick={handleAskQuestion}
+          aria-label="Ask Question"
+        >
+          <Plus className="w-7 h-7" />
+        </button>
+      )}
 
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <AskQuestionModal

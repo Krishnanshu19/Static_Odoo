@@ -2,11 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth as useAuthApi } from "@/hooks/useStackitApi";
+import { useLoginMutation } from "@/redux/rtk-query/Query";
 import type { User } from "@/types/apis";
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (emailOrUsername: string, password: string) => Promise<void>;
   register: (
     username: string,
     email: string,
@@ -32,11 +33,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loginApi, loginState] = useLoginMutation();
   const {
-    login: loginApi,
     register: registerApi,
     logout: logoutApi,
-    loginState,
     registerState,
   } = useAuthApi();
 
@@ -55,16 +55,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const isEmail = (input: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
+  const login = async (emailOrUsername: string, password: string) => {
     try {
-      const result = await loginApi({ email, password });
-      if (result.success && result.data.user) {
-        setUser(result.data.user);
-        localStorage.setItem("user", JSON.stringify(result.data.user));
-        localStorage.setItem("token", result.data.token);
+      let loginPayload: any = { password };
+      if (isEmail(emailOrUsername)) {
+        loginPayload.email = emailOrUsername;
+      } else {
+        loginPayload.username = emailOrUsername;
+      }
+      console.log("LOGIN PAYLOAD:", loginPayload); // Debug log
+      const result = await loginApi(loginPayload); // No .unwrap() needed here
+      console.log("LOGIN RESULT:", result); // Debug log
+      if (
+        result.data &&
+        result.data.success &&
+        result.data.data &&
+        result.data.data.user
+      ) {
+        setUser(result.data.data.user);
+        localStorage.setItem("user", JSON.stringify(result.data.data.user));
+        localStorage.setItem("token", result.data.data.token);
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error:", error); // Debug log
       throw error;
     }
   };

@@ -39,21 +39,27 @@ export const useAuth = () => {
     }
   }, [register])
 
-  const handleLogin = useCallback(async (credentials: {
-    email: string
-    password: string
-  }) => {
-    try {
-      const result = await login(credentials).unwrap()
-      if (result.success && result.data.token) {
-        localStorage.setItem('token', result.data.token)
-        localStorage.setItem('user', JSON.stringify(result.data.user))
+  const handleLogin = useCallback(
+    async (emailOrUsername: string, password: string) => {
+      try {
+        let loginPayload: any = { password };
+        if (emailOrUsername.includes("@")) {
+          loginPayload.email = emailOrUsername;
+        } else {
+          loginPayload.username = emailOrUsername;
+        }
+        const result = await login(loginPayload).unwrap();
+        if (result.success && result.data.token) {
+          localStorage.setItem("token", result.data.token);
+          localStorage.setItem("user", JSON.stringify(result.data.user));
+        }
+        return result;
+      } catch (error) {
+        throw error;
       }
-      return result
-    } catch (error) {
-      throw error
-    }
-  }, [login])
+    },
+    [login]
+  );
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
@@ -104,6 +110,16 @@ export const useQuestion = (questionId: string) => {
   const [createAnswer, createAnswerState] = useCreateAnswerMutation()
   const [vote, voteState] = useVoteMutation()
 
+  // Map backend answer.user to author for frontend compatibility
+  const mappedAnswers = (questionDetails?.answers || []).map((answer: any) => ({
+    ...answer,
+    author: answer.user || answer.author, // prefer user, fallback to author
+    replies: answer.replies?.map((reply: any) => ({
+      ...reply,
+      author: reply.user || reply.author,
+    })) || [],
+  }))
+
   const handleCreateAnswer = useCallback(async (answerData: {
     content: string
     userTagged?: string[]
@@ -134,7 +150,7 @@ export const useQuestion = (questionId: string) => {
 
   return {
     question: questionDetails?.question,
-    answers: questionDetails?.answers || [],
+    answers: mappedAnswers,
     isLoading,
     error,
     createAnswer: handleCreateAnswer,
