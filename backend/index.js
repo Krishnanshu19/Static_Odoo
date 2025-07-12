@@ -30,8 +30,8 @@ app.use('/api/v1/notifications', notificationRoutes);
 // Health check route
 app.get('/api/v1/health', (req, res) => {
   const dbStatus = getConnectionStatus();
-  res.json({ 
-    message: 'Server is running', 
+  res.json({
+    message: 'Server is running',
     status: 'OK',
     database: dbStatus
   });
@@ -40,24 +40,22 @@ app.get('/api/v1/health', (req, res) => {
 const server = http.createServer(app);
 setupSocketServer(server);
 
-// Initialize server
-const startServer = async () => {
-  try {
-    // Connect to database
-    await connectDB();
-    
-    // Start server
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
+// Only start the server if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  const startServer = async () => {
+    try {
+      await connectDB();
+      server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  };
 
-// Start the server
-startServer();
+  startServer();
+}
 
 export { sendNotification };
 
