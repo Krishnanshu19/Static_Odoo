@@ -5,6 +5,9 @@ import { connectDB, getConnectionStatus } from './src/db/connect.js';
 import authRoutes from './src/routes/auth.js';
 import questionRoutes from './src/routes/question.js';
 import answerRoutes from './src/routes/answer.js';
+import voteRoutes from './src/routes/vote.js';
+import http from 'http';
+import { setupSocketServer, sendNotification } from './src/socket/socketServer.js';
 
 dotenv.config();
 
@@ -20,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/questions', questionRoutes);
 app.use('/api/v1/answers', answerRoutes);
+app.use('/api/v1/votes', voteRoutes);
 
 // Health check route
 app.get('/api/v1/health', (req, res) => {
@@ -31,6 +35,9 @@ app.get('/api/v1/health', (req, res) => {
   });
 });
 
+const server = http.createServer(app);
+setupSocketServer(server);
+
 // Initialize server
 const startServer = async () => {
   try {
@@ -38,7 +45,7 @@ const startServer = async () => {
     await connectDB();
     
     // Start server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
@@ -49,5 +56,7 @@ const startServer = async () => {
 
 // Start the server
 startServer();
+
+export { sendNotification };
 
 export default app;
